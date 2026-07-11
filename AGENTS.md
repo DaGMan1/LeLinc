@@ -1,5 +1,17 @@
 # AGENTS.md — Working Agreement for This Repo
 
+> **Q, read this first:** business model correction, confirmed by Garry
+> 2026-07-11 - free-tier Cloak Browser is the permanent setup, not a
+> stopgap. Each client's container runs its own free Cloak Browser
+> (unlimited sessions, no license). Garry isn't buying, reselling, or
+> budgeting for Cloak Browser access at all - LeLinc's product is the
+> aggregator (dashboard, QC, orchestration) on top of it, not Cloak
+> Browser itself. If any spec doc frames Cloak Browser licensing/cost as
+> something LeLinc needs to absorb or price around, that's wrong - fix it
+> to match. Full detail in "Resolved: real Cloak Browser" further down
+> this file. This note is also mirrored as `NOTE-FROM-CLAUDE-CODE.md` on
+> `q-specs` in case that's the only branch you read.
+
 This repo now has two branches:
 
 - **`main`** — the implementation. Owned by this Claude Code instance,
