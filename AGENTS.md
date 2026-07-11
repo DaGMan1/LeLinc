@@ -100,6 +100,32 @@ image builds, extension zip serves correctly, manifest/background.js are
 syntactically valid - not yet tested against a live platform login, which
 needs a real Chrome browser this sandbox doesn't have).
 
+## Superseded: sideloaded extension is no longer the default Connect flow (2026-07-11)
+
+Garry correctly called out that sideloading (zip → developer mode → load
+unpacked) is real friction for a non-technical customer base - not an
+acceptable default, whatever its technical merits. `extension/` and
+`/extension-install.html` are **not deleted** - they're the future
+"fully automatic, no file" path once published to the Chrome Web Store -
+but the dashboard's Connect button no longer routes there.
+
+**Default Connect flow is now `nginx/import-cookies.html`:** open the
+real login page → log in normally → export cookies via the already-
+published, independent ["Get cookies.txt LOCALLY"](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+extension (zero review wait, since we don't own or publish it) → drop the
+file on LeLinc. New `POST /cookies/import` in `agents/cookie_grant.py`
+parses the Netscape cookie file format, including the `#HttpOnly_` prefix
+convention most exporters use to mark httpOnly cookies (which is exactly
+the class of cookie a session token is). Verified end to end with a
+realistic sample file (httpOnly sessionid preserved correctly,
+cross-platform cookies correctly excluded by domain filter, CDP injection
+into Cloak works against the imported cookies).
+
+Same underlying constraint as before, still respected: login happens in
+the client's own real, unrelayed browser tab. The only thing that changed
+is which tool reads the resulting cookie - a widely-trusted, already-
+approved extension instead of our own unpublished one.
+
 ## Resolved: real Cloak Browser, not a placeholder (2026-07-11)
 
 `cloak/entrypoint.sh` previously ran stock `chromium` (apt package) with
@@ -141,6 +167,18 @@ their cost, not LeLinc's.
 ## Handoff Log
 
 Newest entry first.
+
+### 2026-07-11 — Claude Code (sandbox session), update 6
+Replaced the sideloaded-extension Connect flow with `import-cookies.html`
++ `POST /cookies/import` - see "Superseded" above. Also fixed two real
+bugs found while verifying this end to end with real data (not
+guessed): `run_sherlock()`'s output filter never matched Sherlock's actual
+`[+] SiteName: url` format (matched zero lines since the first version of
+this file - Sherlock has never returned a result before this), and
+`RateLimitMiddleware` was throttling GETs too, so a dashboard page load's
+two concurrent status fetches would randomly 429 one of them and render
+as "not connected" even when the data existed. Both fixed; see README.md
+Status for detail.
 
 ### 2026-07-11 — Claude Code (sandbox session), update 5
 Swapped stock Chromium for the real Cloak Browser binary - see "Resolved:

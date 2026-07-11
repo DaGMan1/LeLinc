@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>LeLinc — Dashboard</title>
 <link rel="stylesheet" href="/styles.css" />
-<script src="/login-proxy/proxy.js"></script>
 <style>
   body { padding: 20px 20px 48px; }
   .wrap { max-width: 560px; margin: 0 auto; }
@@ -137,19 +136,6 @@
 const PLATFORMS = ["instagram", "linkedin", "facebook", "tiktok"];
 const params = new URLSearchParams(window.location.search);
 const clientId = params.get("client_id");
-const pendingPlatforms = new Set();
-let pollHandle = null;
-
-function ensurePolling() {
-  if (pollHandle) return;
-  pollHandle = setInterval(async () => {
-    await loadPlatforms();
-    if (pendingPlatforms.size === 0) {
-      clearInterval(pollHandle);
-      pollHandle = null;
-    }
-  }, 3000);
-}
 
 function statusPill(kind, label) {
   const span = document.createElement("span");
@@ -168,9 +154,6 @@ async function loadPlatforms() {
   container.innerHTML = "";
   PLATFORMS.forEach((platform) => {
     const status = connected.find((c) => c.platform === platform);
-    if (status && status.connected && !status.expired) {
-      pendingPlatforms.delete(platform);
-    }
 
     const card = document.createElement("div");
     card.className = "platform-card";
@@ -191,23 +174,13 @@ async function loadPlatforms() {
       card.appendChild(statusPill("success", "Connected"));
     } else if (status && status.expired) {
       card.appendChild(statusPill("warn", "Expired — reconnect"));
-    } else if (pendingPlatforms.has(platform)) {
-      card.appendChild(statusPill("accent", "Waiting for login…"));
     } else {
-      const btn = document.createElement("button");
+      const btn = document.createElement("a");
       btn.className = "btn-primary connect";
+      btn.style.textAlign = "center";
+      btn.style.textDecoration = "none";
       btn.textContent = `Connect ${platform}`;
-      btn.onclick = () => {
-        openPlatformLogin(platform, clientId, (result) => {
-          if (result.ok) {
-            pendingPlatforms.add(platform);
-            loadPlatforms();
-            ensurePolling();
-          } else if (result.reason === "not-installed") {
-            window.location.href = "/extension-install.html";
-          }
-        });
-      };
+      btn.href = `/import-cookies.html?client_id=${clientId}&platform=${platform}`;
       card.appendChild(btn);
     }
     container.appendChild(card);
@@ -301,11 +274,13 @@ function renderFindings(job) {
 async function loadReport() {
   if (!clientId) {
     document.getElementById("business-name").textContent = "No client_id in URL";
+    document.getElementById("findings").textContent = "Nothing to show without a client_id.";
     return;
   }
   const res = await fetch(`/onboard/status/${clientId}`);
   if (!res.ok) {
     document.getElementById("business-name").textContent = "No profile found for this link";
+    document.getElementById("findings").textContent = "No profile found for this link.";
     return;
   }
   const job = await res.json();

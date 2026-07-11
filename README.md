@@ -69,6 +69,36 @@ image) rather than a real CSS bug - worth knowing if screenshotting this
 app again, use CDP `Emulation.setDeviceMetricsOverride` instead of
 `--window-size` for anything below ~500px.
 
+**Connect flow rebuilt (2026-07-11):** the custom extension required
+sideloading (zip, developer mode, load unpacked) - real friction for a
+non-technical customer base, correctly called out as a blocker. Default
+Connect flow is now `nginx/import-cookies.html`: open the real login page,
+log in normally, export via the already-published, independent
+["Get cookies.txt LOCALLY"](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+extension, drop the file on LeLinc. `POST /cookies/import`
+(`agents/cookie_grant.py`) parses the Netscape cookie format (including
+the `#HttpOnly_` prefix convention, since the actual session cookie is
+httpOnly). Our own purpose-built extension (`extension/`) stays in the
+repo as the future "fully automatic, no file" upgrade once it clears
+Chrome Web Store review - not deleted, just not the default path anymore.
+
+Two real bugs found and fixed while verifying this end to end (not
+guessed - actually run through onboarding -> dashboard -> connect ->
+findings with real data):
+- `run_sherlock()` filtered on `line.startswith("http")`, but Sherlock's
+  output format is `[+] SiteName: https://...` - that filter matched zero
+  lines, ever. Sherlock has never returned a result in any test before
+  this fix, regardless of whether a real profile existed.
+- `RateLimitMiddleware` throttled every request per-IP, including GETs -
+  a single dashboard page load fires two concurrent status fetches from
+  the same IP, so one would 429 and render as "not connected"/"no
+  profile found" even when the data was there. Now only mutating
+  (non-GET) requests are throttled.
+
+Also fixed: Sherlock was searching the literal business name ("Riverside
+Cafe") as a username - real handles don't have spaces. `derive_usernames()`
+now tries a slugified business name and the domain's root label instead.
+
 Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
 `sales_manager.py`, `sales_agent.py`.
 
@@ -78,5 +108,5 @@ Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
 - No passwords stored — cookies only.
 - One platform login at a time, never bulk.
 - 2-of-3 rule for every claim shown to a client.
-- Rate limit: 1 request / 3 sec / IP (enforced in `agents/rate_limit.py`).
+- Rate limit: 1 mutating request / 3 sec / IP (enforced in `agents/rate_limit.py`).
 - Cloak Browser only — no Playwright/Puppeteer, no VNC/noVNC anywhere.
