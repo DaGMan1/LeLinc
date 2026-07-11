@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import subprocess
 import time
 import uuid
@@ -75,7 +76,8 @@ def health():
 async def run_profiling(client_id: str, req: OnboardRequest):
     loop = asyncio.get_event_loop()
     try:
-        sherlock_results = await loop.run_in_executor(None, run_sherlock, req.business_name)
+        usernames = derive_usernames(req.business_name, req.domain)
+        sherlock_results = await loop.run_in_executor(None, run_sherlock, usernames)
         hunter_results = await loop.run_in_executor(None, run_hunter, req.domain)
         hibp_results = await loop.run_in_executor(None, run_hibp, req.email)
 
@@ -91,15 +93,44 @@ async def run_profiling(client_id: str, req: OnboardRequest):
         JOBS[client_id]["error"] = str(exc)
 
 
-def run_sherlock(username: str) -> list[str]:
+def derive_usernames(business_name: str, domain: str) -> list[str]:
+    # Sherlock matches literal usernames, not free text - "Riverside Cafe"
+    # matches nothing on any platform because real handles don't have
+    # spaces. Derive plausible handles from what we actually have instead.
+    candidates = []
+
+    slug = re.sub(r"[^a-z0-9]", "", business_name.lower())
+    if slug:
+        candidates.append(slug)
+
+    domain_root = re.sub(r"[^a-z0-9]", "", domain.lower().split(".")[0]) if domain else ""
+    if domain_root and domain_root not in candidates:
+        candidates.append(domain_root)
+
+    return candidates or [business_name]
+
+
+SHERLOCK_URL_RE = re.compile(r"https?://\S+")
+
+
+def run_sherlock(usernames: list[str]) -> list[str]:
+    if not usernames:
+        return []
     try:
         result = subprocess.run(
-            ["sherlock", username, "--print-found", "--timeout", "10"],
+            ["sherlock", *usernames, "--print-found", "--timeout", "10"],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=180,
         )
-        return [line for line in result.stdout.splitlines() if line.startswith("http")]
+        # Sherlock prints "[+] SiteName: https://..." per match, not a bare
+        # URL - extract the URL from wherever it appears in the line.
+        urls = []
+        for line in result.stdout.splitlines():
+            match = SHERLOCK_URL_RE.search(line)
+            if match:
+                urls.append(match.group(0))
+        return urls
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return []
 
