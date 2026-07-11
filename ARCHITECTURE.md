@@ -1,8 +1,7 @@
-# LeLinc — Complete System Architecture & Flow
+# LeLinc — Complete System Architecture
 
-**Version:** 2.0 · **Date:** 8 July 2026
-**Branding:** Key View Digital (legal entity)
-**Saved By:** Q
+**Version:** 1.0 · **Date:** 11 July 2026
+**Repo:** DaGMan1/LeLinc
 
 ---
 
@@ -32,27 +31,9 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 │  KEY VIEW INFRASTRUCTURE — INTERNAL                                     │
 │  (shared LeLinc instance for all scoping/prospecting)                   │
 │                                                                         │
-│  ┌─────────────────────────────────────────────────────────┐           │
-│  │  PROSPECTING (PR Manager + Sales Manager)               │           │
-│  │                                                         │           │
-│  │  PR Manager:                                            │           │
-│  │  • Scrapes news/journals for industry coverage          │           │
-│  │  • Identifies journalists writing about KVC/KVD topics  │           │
-│  │  • Tracks competitor mentions and press                 │           │
-│  │  • Builds media contact list per industry               │           │
-│  │                                                         │           │
-│  │  Sales Manager:                                         │           │
-│  │  • Scrapes businesses matching KVC/KVD target profile   │           │
-│  │  • Finds businesses with weak social presence (= need)  │           │
-│  │  • Identifies distressed companies (= KVC opportunity)  │           │
-│  │  • Builds lead list for Sales Agent                     │           │
-│  │                                                         │           │
-│  │  Sales Agent:                                           │           │
-│  │  • Works leads from Sales Manager                       │           │
-│  │  • Runs LeLinc profile on each prospect                 │           │
-│  │  • Generates CosmetologyCo-style report                 │           │
-│  │  • Hands report to Garry for review                     │           │
-│  └─────────────────────────────────────────────────────────┘           │
+│  Prospecting — finds leads via news scraping, directory scraping,       │
+│  social monitoring. Profiles each lead through LeLinc. Reports to       │
+│  Garry for review.                                                      │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  PHASE 1 — ONBOARDING (prospect converted to client)                   │
@@ -81,7 +62,7 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 ├─────────────────────────────────────────────────────────────────────────┤
 │  PHASE 2 — CLIENT PROFILING                                             │
 │                                                                         │
-│  Orchestrator Agent begins profiling                                    │
+│  Orchestrator begins profiling                                          │
 │        │                                                                │
 │        ▼                                                                │
 │  ┌─────────────────────────────────────────┐                            │
@@ -95,8 +76,8 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 │  │  • Epieos         (Google identity)     │                            │
 │  │  • HIBP           (breach check)        │                            │
 │  │  • Site scraping  (business profiles)   │                            │
-│  │  • News scraping  (PR Manager)          │                            │
-│  │  • Biz directory  (Sales Manager)       │                            │
+│  │  • News scraping  (industry coverage)   │                            │
+│  │  • Biz directory  (prospect discovery)  │                            │
 │  │                                         │                            │
 │  │  Rate limiting: max 1 req/3 sec per IP  │                            │
 │  │  Proxy rotation: new IP per batch       │                            │
@@ -121,10 +102,11 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 │  │  REPORT TO GARRY                        │                            │
 │  │  • For KVC: financial signals, distress │                            │
 │  │  • For KVD: platform presence, gaps     │                            │
-│  │  • For Sales: lead score + rationale    │                            │
-│  │  • For PR: journalist list + reach      │                            │
+│  │  • Lead score + rationale               │                            │
+│  │  • Media contact list + reach           │                            │
 │  │                                         │                            │
-│  │  You review. You decide what to share.  │                            │
+│  │  Garry reviews. Garry decides what to   │                            │
+│  │  share with the client.                 │                            │
 │  └─────────────────────────────────────────┘                            │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -164,22 +146,7 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 
 ---
 
-## 2. THE FULL AGENT TEAM
-
-| # | Agent | LLM? | Role | Business |
-|---|---|---|---|---|
-| **1** | **Orchestrator** | ✅ Small | Runs LeLinc flow front-to-back. Profiling, tools, state, errors. | Core |
-| **2** | **QC Agent** | ❌ None | Cross-references findings. Confidence scoring. Kills false positives. | Core |
-| **3** | **Cookie Grant** | ❌ None | Captures login sessions, stores per-platform, feeds to Cloak. | Core |
-| **4** | **PR Manager** | ✅ LLM | Scrapes news, tracks journalists, builds media lists, monitors competitor press. | KVD |
-| **5** | **Sales Manager** | ✅ LLM | Scrapes directories for prospects, scores leads, identifies opportunities. | KVD |
-| **6** | **Sales Agent** | ✅ LLM | Works leads from Sales Manager, runs profiles, generates reports for Garry. | KVD |
-| **7** | **CoSidekick** | ✅ Full | (Product) Engagement strategy, posting, monitoring on LeLinc. | KVD |
-| **8** | **Q (Overseer)** | ✅ Full | Sees everything. Overview of all agents, all clients, all comms. | Key View |
-
----
-
-## 3. SOFTWARE STACK
+## 2. SOFTWARE STACK
 
 | Layer | Software | Purpose |
 |---|---|---|
@@ -194,14 +161,14 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 | **Hunter.io** | API | Domain email discovery |
 | **Epieos** | Web/API | Google identity by email |
 | **HIBP** | API | Breach/compromise check |
-| **News scraping** | Python + Cloak | PR Manager — industry coverage |
-| **Directory scraping** | Python + Cloak | Sales Manager — prospect discovery |
+| **News scraping** | Python + Cloak | Industry coverage |
+| **Directory scraping** | Python + Cloak | Prospect discovery |
 | **CoSidekick** (product) | LLM (Qwen/Claude) | Engagement (optional tier on LeLinc) |
 | **Eyes On Chat** (product) | FastAPI + WebSocket | Client comms (optional tier on LeLinc) |
 
 ---
 
-## 4. DOCKER CONTAINER STRUCTURE
+## 3. DOCKER CONTAINER STRUCTURE
 
 ```
 lelinc-client-container/
@@ -217,22 +184,19 @@ lelinc-client-container/
 ├── agents/
 │   ├── orchestrator.py          # Small LLM — runs the LeLinc flow
 │   ├── qc_engine.py             # No LLM — cross-reference + confidence
-│   ├── cookie_grant.py          # No LLM — cookie service
-│   ├── pr_manager.py            # LLM — news scraping + media lists
-│   ├── sales_manager.py         # LLM — prospect discovery + scoring
-│   └── sales_agent.py           # LLM — profile generation + reports
+│   └── cookie_grant.py          # No LLM — cookie service
 ├── docker-compose.yml           # Single container (NGINX + Cloak + agents)
 └── start.sh                     # Entry command
 ```
 
 ---
 
-## 5. HOW KVC AND KVD SHARE THE SAME INFRASTRUCTURE
+## 4. HOW KVC AND KVD SHARE THE SAME INFRASTRUCTURE
 
 ```
 Key View Infrastructure (shared LeLinc instance)
         │
-        ├── Internal prospecting engine (PR, Sales, profiling)
+        ├── Internal prospecting engine (prospecting, profiling)
         │
         ├── KVC Client
         │   • LeLinc profile → financial distress signals
@@ -249,7 +213,7 @@ Both use the same profiling engine. The reports just focus on different signals 
 
 ---
 
-## 6. FALSE POSITIVE PREVENTION
+## 5. FALSE POSITIVE PREVENTION
 
 Every platform claim must pass **at least 2 of 3** checks:
 
@@ -277,25 +241,49 @@ Anything with less than 2 sources is **never shown** to client. Flagged internal
 
 ---
 
-## 7. EAT YOUR OWN DOG FOOD
+## 6. EAT YOUR OWN DOG FOOD
 
 Before we sell it, we use it:
 
 | What we do | How LeLinc helps |
 |---|---|
 | Profile KVC prospects | LeLinc profiling engine |
-| Find new business leads | Sales Manager + Sales Agent |
+| Find new business leads | Prospecting engine |
 | Manage our own social presence | CoSidekick on our own accounts |
 | Client comms | Eyes On Chat |
-| Monitor press coverage | PR Manager |
-| Qualify leads with confidence | QC Agent |
+| Monitor press coverage | News scraping |
+| Qualify leads with confidence | QC Engine |
 
 ---
 
-## 8. LINKED ARCHITECTURE DOCS
+## 7. API ENDPOINTS
 
-- `_Shared/Resources/LeLinc-Architecture-2026-07-08.md` — Core architecture
-- `_Shared/Resources/FBI-OSINT-Tools-2026-06-24.md` — OSINT tool reference
-- `_Shared/Resources/10-Best-Free-AI-Agent-Tools-Hermes-Featured-2026-06-18.md` — Agent tooling reference
-- `_Shared/crm/` — Client records for alpha testers
-- `_Shared/Resources/agency-agents/` — MIT-licensed specialist agent library (pinned)
+| Method | Endpoint | Service | Description |
+|---|---|---|---|
+| POST | /onboard | Orchestrator | Submit new client for profiling |
+| GET | /onboard/{id}/status | Orchestrator | Check profiling progress |
+| POST | /cookies | Cookie Grant | Submit captured cookies |
+| GET | /cookies/{client_id} | Cookie Grant | List connected platforms |
+| POST | /qc/check | QC Engine | Verify a claim |
+| GET | /dashboard | NGINX | Client dashboard UI |
+| GET | /health | All | Health check |
+
+---
+
+## 8. KEY CONSTRAINTS
+
+- **Single container per client** — don't split services across containers
+- **No passwords stored** — Cookie Grant captures session cookies, not credentials
+- **One platform at a time** — login flow is serial, not bulk
+- **2-of-3 rule** — every claim verified by at least 2 independent sources
+- **Rate limit** — max 1 request per 3 seconds per IP
+- **Cloak Browser** — not Playwright, not Puppeteer, not Selenium
+
+---
+
+## 9. DEPLOYMENT
+
+- Runs on VPS (2.25.187.99) behind Caddy reverse proxy
+- Domain: lelinc.keyview.com.au
+- Ports: 80 (dashboard), 6901 (Cloak), 8000+ (services)
+- Cloak Browser already running at lelinc.keyview.com.au:8081
