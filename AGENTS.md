@@ -30,17 +30,37 @@ Not yet reconciled:
   `GET /onboard/{id}/status`. This session's code (`agents/cookie_grant.py`,
   `agents/orchestrator.py`) currently implements the `/status/` form.
 
-## Ground rules (proposed by this session, open to revision)
+## Ownership split (decided by Garry, 2026-07-11)
+
+Both instances keep building, divided by area:
+
+- **VPS instance (Q-directed) owns Cloak Browser integration** — it's
+  co-located with the real Cloak Browser deployment
+  (`lelinc.keyview.com.au:8081`, `cloakhq/cloakbrowser` image) and can
+  actually test against it. Owns: `cloak/entrypoint.sh`,
+  `cloak/cdp_handler.py`, and the Cloak-specific layer of the Dockerfile
+  (base image / install steps for Cloak Browser itself).
+- **This session owns everything else** — `agents/orchestrator.py`,
+  `agents/qc_engine.py`, `agents/cookie_grant.py` (the storage/API side;
+  the CDP feed-into-Cloak call is the VPS instance's territory since it
+  touches Cloak directly), `agents/rate_limit.py`, `nginx/` (dashboard,
+  onboarding, default.conf, login-proxy), and the overall
+  `docker-compose.yml` / `start.sh` shape (ports, service orchestration).
+- **Non-negotiable regardless of area:** no VNC/noVNC anywhere. This is
+  Garry's explicit product decision, not an implementation detail either
+  side can relitigate unilaterally.
+- **API contract is shared surface** — changing an endpoint path affects
+  the other side's code. Propose changes in the Handoff Log first; don't
+  silently rename and push. Today's implemented-and-tested paths
+  (`GET /cookies/status/{client_id}`, `GET /onboard/status/{id}`) are
+  canonical until changed here with agreement.
+
+## Ground rules
 
 1. **Pull with `--ff-only` before every push.** If it's not a fast-forward,
    stop and reconcile rather than force-pushing over the other agent.
-2. **Docs vs code split, for now:** Q's instance owns architecture/spec
-   docs (`ARCHITECTURE.md`, `BUILD.md`, etc.); this session owns the
-   implementation (`agents/`, `cloak/`, `nginx/`, `Dockerfile`,
-   `docker-compose.yml`). If the spec changes in a way that requires a
-   code change, leave a note in the Handoff Log instead of editing code
-   files directly from the other side — the note gets picked up and
-   implemented deliberately, not blind-applied.
+2. **Stay inside your area.** If you need a change on the other side, ask
+   for it in the Handoff Log instead of editing those files directly.
 3. **State the "why" in commit messages** — neither agent has memory of
    the other's conversation, only git history and this file.
 4. **`README.md`'s Status section is the single source of truth** for
@@ -50,6 +70,19 @@ Not yet reconciled:
 ## Handoff Log
 
 Newest entry first.
+
+### 2026-07-11 — Claude Code (sandbox session), update 2
+Garry decided: split by area, both instances keep building (see Ownership
+split above). VPS instance: please treat `cloak/entrypoint.sh` and
+`cloak/cdp_handler.py` as yours to rework against the real
+`cloakhq/cloakbrowser` image - the versions currently in this repo are my
+generic-Chromium placeholder, built only so the full flow had something
+to integration-test against end to end. Replace them freely. Two asks:
+keep the CDP port internal-only (no VNC, no exposed debug port), and keep
+`load_client_cookies()` / the cookie-injection entrypoint's interface
+compatible with what `agents/cookie_grant.py` writes to
+`/cookies/{client_id}/{platform}.json` (see that file for the exact JSON
+shape) so I don't have to change the storage side to match.
 
 ### 2026-07-11 — Claude Code (sandbox session)
 Scaffolded and verified end to end (local docker build/run, full
