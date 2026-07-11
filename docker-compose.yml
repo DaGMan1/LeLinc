@@ -11,6 +11,7 @@ services:
       - CLIENT_ID=${CLIENT_ID:-default}
       - HUNTER_API_KEY=${HUNTER_API_KEY:-}
       - HIBP_API_KEY=${HIBP_API_KEY:-}
+      - CLOAKBROWSER_LICENSE_KEY=${CLOAKBROWSER_LICENSE_KEY:-}
     volumes:
       - lelinc-cookies:/cookies
       - lelinc-profile:/profile

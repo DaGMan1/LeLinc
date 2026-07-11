@@ -88,9 +88,47 @@ image builds, extension zip serves correctly, manifest/background.js are
 syntactically valid - not yet tested against a live platform login, which
 needs a real Chrome browser this sandbox doesn't have).
 
+## Resolved: real Cloak Browser, not a placeholder (2026-07-11)
+
+`cloak/entrypoint.sh` previously ran stock `chromium` (apt package) with
+manual flags - a placeholder noted as such in update 2 below. That's
+replaced: `cloakbrowser` (pip) + `python -m cloakbrowser install` at build
+time now fetches the actual [CloakHQ/CloakBrowser](https://github.com/CloakHQ/cloakbrowser)
+binary (free tier: Chromium v146, 58 source-level fingerprint/CDP-detection
+patches, no license key required), and `entrypoint.sh` execs that binary
+directly with the same CDP flags as before. Verified: build downloads and
+Ed25519-signature-verifies the binary, container boots it, CDP cookie
+injection (`Network.setCookies`) works against it end to end.
+
+Correction to earlier reasoning in this file: Cloak Browser's patches
+specifically include "CDP input behavior mimicking" and a `humanize` mode
+(Bézier mouse curves, natural typing rhythm) aimed at making CDP-relayed
+interaction not look CDP-relayed - that's a real, specific mitigation for
+the class of problem that CAPTCHA-locked the old build. It doesn't change
+the Cookie Grant Flow decision above, though: Cloak Browser's own docs
+don't claim to handle 2FA/new-device-verification/login flows, and
+explicitly recommend persistent profiles with pre-warmed cookies for
+exactly the "fresh session gets challenged" problem - i.e. their own
+recommended pattern *is* the extension-based cookie injection already
+built, not an alternative to it. Where Cloak Browser's stealth actually
+matters most is everything after login: the ongoing automated activity
+(CoSidekick posting/engaging, feed aggregation) is exactly the
+"post-login automation that shouldn't look automated" problem it's built
+to solve.
+
+Pro tier (latest Chromium, more patches) needs a paid license -
+`CLOAKBROWSER_LICENSE_KEY` is wired through `docker-compose.yml`/`.env.example`
+but unset for now (Garry doesn't have a license yet, free tier in use).
+Pricing scales with concurrent sessions - real per-client cost to factor
+into pricing, not yet decided/factored in anywhere.
+
 ## Handoff Log
 
 Newest entry first.
+
+### 2026-07-11 — Claude Code (sandbox session), update 5
+Swapped stock Chromium for the real Cloak Browser binary - see "Resolved:
+real Cloak Browser" above.
 
 ### 2026-07-11 — Claude Code (sandbox session), update 4
 Built the Cookie Grant browser extension (`extension/`) and wired it into

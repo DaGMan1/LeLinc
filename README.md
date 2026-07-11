@@ -1,8 +1,9 @@
 # LeLinc
 
 Social media automation engine for Key View Digital. Single Docker container
-per client: NGINX (dashboard/onboarding), Cloak Browser (headless Chromium via
-CDP, no VNC), Cookie Grant Agent, QC Engine, Orchestrator.
+per client: NGINX (dashboard/onboarding), Cloak Browser ([CloakHQ/CloakBrowser](https://github.com/CloakHQ/cloakbrowser)
+- real stealth Chromium, source-level fingerprint patches, no VNC), Cookie
+Grant Agent, QC Engine, Orchestrator.
 
 See `ARCHITECTURE.md` for the full system design and `BUILD.md` for the build
 spec this repo implements.
@@ -35,6 +36,17 @@ into the dashboard - see `extension/README.md` for how it works and
 `AGENTS.md` for why the login step needs it. Not yet published to the
 Chrome Web Store; customers sideload it via `/extension-install.html`
 during dev.
+
+`cloak/entrypoint.sh` runs the real Cloak Browser binary (not a stock
+Chromium placeholder) - `python -m cloakbrowser install` fetches it at
+build time (free tier, no license key needed: Chromium v146, 58
+source-level patches). Verified: image builds, binary boots, CDP cookie
+injection (`Network.setCookies`) works against it. Set
+`CLOAKBROWSER_LICENSE_KEY` (in `.env`) to unlock the Pro tier (latest
+Chromium, more patches) once there's a subscription - see
+[cloakbrowser.dev](https://cloakbrowser.dev/) for pricing, which scales
+with concurrent sessions and is a real per-client cost to factor into
+pricing.
 
 Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
 `sales_manager.py`, `sales_agent.py`.

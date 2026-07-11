@@ -2,9 +2,12 @@ FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
-    chromium \
-    xvfb \
     fonts-liberation \
+    fonts-noto-color-emoji \
+    fonts-freefont-ttf \
+    fonts-unifont \
+    fonts-ipafont-gothic \
+    fonts-wqy-zenhei \
     curl \
     ca-certificates \
     zip \
@@ -13,7 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && playwright install-deps chromium \
+    && python -m cloakbrowser install
 
 COPY agents/ ./agents/
 COPY cloak/ ./cloak/
