@@ -38,6 +38,9 @@
   }
   .badge.connected { background: #16321f; color: #5fd88a; }
   .badge.expired { background: #3a2313; color: #f0a95c; }
+  .badge.pending { background: #1c2333; color: #7ea6f7; }
+  .install-hint { font-size: 0.75rem; color: #f0a95c; margin: -4px 0 14px; }
+  .install-hint a { color: #7ea6f7; }
   button.connect {
     background: #5b8dee;
     color: #fff;
@@ -69,6 +72,19 @@
 const PLATFORMS = ["instagram", "linkedin", "facebook", "tiktok"];
 const params = new URLSearchParams(window.location.search);
 const clientId = params.get("client_id");
+const pendingPlatforms = new Set();
+let pollHandle = null;
+
+function ensurePolling() {
+  if (pollHandle) return;
+  pollHandle = setInterval(async () => {
+    await loadPlatforms();
+    if (pendingPlatforms.size === 0) {
+      clearInterval(pollHandle);
+      pollHandle = null;
+    }
+  }, 3000);
+}
 
 async function loadPlatforms() {
   const container = document.getElementById("platforms");
@@ -80,6 +96,10 @@ async function loadPlatforms() {
   container.innerHTML = "";
   PLATFORMS.forEach((platform) => {
     const status = connected.find((c) => c.platform === platform);
+    if (status && status.connected && !status.expired) {
+      pendingPlatforms.delete(platform);
+    }
+
     const row = document.createElement("div");
     row.className = "platform-row";
 
@@ -98,11 +118,26 @@ async function loadPlatforms() {
       badge.className = "badge expired";
       badge.textContent = "Expired";
       row.appendChild(badge);
+    } else if (pendingPlatforms.has(platform)) {
+      const badge = document.createElement("span");
+      badge.className = "badge pending";
+      badge.textContent = "Waiting for login…";
+      row.appendChild(badge);
     } else {
       const btn = document.createElement("button");
       btn.className = "connect";
       btn.textContent = `Connect ${platform}`;
-      btn.onclick = () => openPlatformLogin(platform);
+      btn.onclick = () => {
+        openPlatformLogin(platform, clientId, (result) => {
+          if (result.ok) {
+            pendingPlatforms.add(platform);
+            loadPlatforms();
+            ensurePolling();
+          } else if (result.reason === "not-installed") {
+            window.location.href = "/extension-install.html";
+          }
+        });
+      };
       row.appendChild(btn);
     }
     container.appendChild(row);

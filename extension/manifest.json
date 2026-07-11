@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "LeLinc Cookie Grant",
+  "version": "1.0.0",
+  "description": "Captures your login session after you log in normally on a connected platform, so LeLinc's browser can use it. Your password never leaves your browser.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkgqpyrwXBqsx0qFDAz0mz4wdC0GGea3c9LL/VmNBd+ROpw9orhHr5Ro9IWsd4hqdmr5F9kVxls61cR9PfEiQwWjm7NNCCm3XxreNsim9U2GcyHnh6m8GlZte73oCh/9zywXY5i52TVtpaSjDCVJAph2mvp+0g8ytbNLkQ6q9vg85f9dFI8e+dGnrGw8jPpkklUAzkVrVWy06srmJrnAaoBHihV+BkKy+qHBSjwB3wpNmegNf+kwp/VEm24lqDWEnR2GtOGELmApRGk8TURjqea7/0Od384IyBs7+Ddn6MzrMDM/NbN3A4OYepZe5zwkws/Sam6GWfn6YTAjVuS2qAQIDAQAB",
+  "permissions": ["cookies", "tabs", "storage", "alarms"],
+  "host_permissions": [
+    "*://*.instagram.com/*",
+    "*://*.linkedin.com/*",
+    "*://*.facebook.com/*",
+    "*://*.tiktok.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://lelinc.keyview.com.au/*",
+      "http://localhost/*"
+    ]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LeLinc Cookie Grant"
+  }
+}

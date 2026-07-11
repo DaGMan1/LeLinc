@@ -1,14 +1,27 @@
-const PLATFORM_LOGIN_URLS = {
-  instagram: "https://www.instagram.com/accounts/login/",
-  linkedin: "https://www.linkedin.com/login",
-  facebook: "https://www.facebook.com/login/",
-  tiktok: "https://www.tiktok.com/login",
-};
+const LELINC_EXTENSION_ID = "jcidoldmjbfbbhnalodchgkcjbimkecf";
+const SUPPORTED_PLATFORMS = ["instagram", "linkedin", "facebook", "tiktok"];
 
-// Opens the real platform login in a new tab - the LeLinc browser extension
-// (not this page) watches that tab and POSTs captured cookies to /cookies.
-function openPlatformLogin(platform) {
-  const url = PLATFORM_LOGIN_URLS[platform];
-  if (!url) return;
-  window.open(url, "_blank", "noopener,noreferrer");
+// Asks the LeLinc Cookie Grant extension to open the real platform login
+// page and watch for a successful login. The extension owns the tab and
+// the cookie capture - this page just triggers it and reports back whether
+// the extension is even installed.
+function openPlatformLogin(platform, clientId, onResult) {
+  if (!SUPPORTED_PLATFORMS.includes(platform)) return;
+
+  if (!window.chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+    onResult && onResult({ ok: false, reason: "not-installed" });
+    return;
+  }
+
+  chrome.runtime.sendMessage(
+    LELINC_EXTENSION_ID,
+    { type: "lelinc:connect", platform, clientId, apiBase: window.location.origin },
+    (response) => {
+      if (chrome.runtime.lastError || !response || !response.ok) {
+        onResult && onResult({ ok: false, reason: "not-installed" });
+        return;
+      }
+      onResult && onResult({ ok: true });
+    }
+  );
 }

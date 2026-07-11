@@ -30,10 +30,14 @@ Build order (per `BUILD.md`):
 5. [x] NGINX frontend (onboarding + dashboard)
 6. [ ] Testing — full flow: onboarding → profiling → QC → report
 
+The Cookie Grant browser extension (`extension/`) is now built and wired
+into the dashboard - see `extension/README.md` for how it works and
+`AGENTS.md` for why the login step needs it. Not yet published to the
+Chrome Web Store; customers sideload it via `/extension-install.html`
+during dev.
+
 Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
-`sales_manager.py`, `sales_agent.py`. The browser extension that captures
-login cookies from the client's real browser tab (referenced by
-`login-proxy/proxy.js`) also isn't in this repo yet.
+`sales_manager.py`, `sales_agent.py`.
 
 ## Constraints
 

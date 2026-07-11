@@ -56,44 +56,49 @@ from you via the GitHub web UI if the convention doesn't hold.
    what's actually built and working (verified end to end, not just
    written) vs still pending.
 
-## Open concern: Cookie Grant Flow mechanism (2026-07-11)
+## Resolved: Cookie Grant Flow mechanism (2026-07-11)
 
-`ARCHITECTURE.md` §1a ("Cookie Grant Flow — Detailed", from `q-specs`)
-describes Step 1 as NGINX reverse-proxying the real Instagram login page
-through our domain, and Step 3 as Cookie Grant monitoring that session via
-CDP to detect login success and extract cookies. Flagging before this gets
-implemented, not after:
+`ARCHITECTURE.md` §1a (from `q-specs`) described NGINX reverse-proxying
+the real platform login page and Cookie Grant monitoring it via CDP. That
+approach is **not being built** - flagged the reasoning below, Garry
+confirmed the original 2026-07-09 decision instead:
 
-- **If Cookie Grant can inspect the login session via CDP, that session is
-  running in a CDP-controlled browser context** - not the client's own
-  local Chrome. That means the client's login clicks/keystrokes are still
-  going through some form of remote relay to reach that browser. This is
-  the same input-timing problem that got Garry CAPTCHA-locked on Instagram
-  before (see `[[project-lelinc-cookie-onboarding]]` if you have access to
-  that memory) - reverse-proxying the login page's HTML doesn't change
-  where the interaction actually happens.
-- **A reverse proxy sitting between the client and Instagram's login POST
-  can see the password in transit**, even if Cookie Grant is never
-  designed to store it. "We never intercept the password" is true of the
-  intent, not necessarily true of the network position - worth getting
-  explicit about whether NGINX is doing opaque TCP/TLS passthrough (in
-  which case it can't also detect login success via DOM/redirect
-  inspection, contradicting Step 3) or terminating and re-rendering the
-  page (in which case it can see the POST body).
+- Reverse-proxying the login page doesn't change where the interaction
+  happens if Cookie Grant still needs CDP visibility into that session -
+  it's the same remote-relay input-timing problem that CAPTCHA-locked
+  Instagram before, just with a proxy layer on top.
+- It also puts NGINX in the path of the raw login POST, which cuts against
+  "we never see the password" regardless of intent.
 
-Garry's original call (2026-07-09) was a browser extension precisely to
-avoid both of these: real login happens in the client's own untouched
-local browser, zero relay, zero proxy, and only the resulting cookies -
-never credentials - get sent to LeLinc. That's not implemented in `main`
-yet either (see below) - it's flagged as the open question, not assumed
-as the answer. Q, if there's a way to make the proxy approach work that
-doesn't reintroduce the relay-timing problem, that'd be great to spell
-out - otherwise this probably needs to go back to Garry to decide before
-either of us builds against it.
+**What's actually built (`extension/`):** a Chrome extension (Manifest
+V3, stable ID via a pinned `key` in `manifest.json`:
+`jcidoldmjbfbbhnalodchgkcjbimkecf`). Dashboard button -> extension opens
+the real login page in a normal tab (zero relay) -> client logs in exactly
+as always -> extension detects the platform's session cookie landing ->
+reads all cookies for that domain via the `cookies` API -> POSTs to
+`POST /cookies` -> closes the tab. See `extension/README.md` for the full
+flow. This is the only place a browser extension is involved - everything
+after a platform is connected (dashboard, DMs, aggregation, automation)
+runs entirely through Cloak Browser, same as the rest of this spec.
+
+Not yet done: Chrome Web Store publishing (currently sideloaded via
+`/extension-install.html`), Firefox/Safari support, real end-to-end test
+against actual Instagram/LinkedIn/Facebook/TikTok logins (verified so far:
+image builds, extension zip serves correctly, manifest/background.js are
+syntactically valid - not yet tested against a live platform login, which
+needs a real Chrome browser this sandbox doesn't have).
 
 ## Handoff Log
 
 Newest entry first.
+
+### 2026-07-11 — Claude Code (sandbox session), update 4
+Built the Cookie Grant browser extension (`extension/`) and wired it into
+`nginx/dashboard.html` + `nginx/login-proxy/proxy.js`. See "Resolved:
+Cookie Grant Flow mechanism" above - the reverse-proxy approach in
+`q-specs` isn't what's being built, and here's what is instead. Also added
+`nginx/extension-install.html` and a Dockerfile step that zips
+`extension/` into `nginx/downloads/lelinc-extension.zip` for sideloading.
 
 ### 2026-07-11 — Claude Code (sandbox session), update 3
 Corrected the framing above per Garry: Q orchestrates via its Claude Code
