@@ -20,6 +20,18 @@ JOBS: dict[str, dict] = {}
 HUNTER_API_KEY = os.environ.get("HUNTER_API_KEY")
 HIBP_API_KEY = os.environ.get("HIBP_API_KEY")
 
+# QC's 2-of-3 rule (agents/qc_engine.py) needs signals from multiple
+# independent tools. Right now only Sherlock is unconditionally wired up
+# (Hunter/HIBP need API keys, and the domain-in-bio/site-scraping signal
+# isn't built at all) - so platform claims below report exactly one
+# signal, never a fabricated confidence level. See PLATFORM_DOMAINS.
+PLATFORM_DOMAINS = {
+    "instagram": "instagram.com",
+    "linkedin": "linkedin.com",
+    "facebook": "facebook.com",
+    "tiktok": "tiktok.com",
+}
+
 
 class OnboardRequest(BaseModel):
     business_name: str
@@ -71,6 +83,7 @@ async def run_profiling(client_id: str, req: OnboardRequest):
             "sherlock": sherlock_results,
             "hunter": hunter_results,
             "hibp": hibp_results,
+            "findings": build_findings(sherlock_results, hunter_results, hibp_results),
         }
         JOBS[client_id]["status"] = "complete"
     except Exception as exc:
@@ -111,3 +124,27 @@ def run_hibp(email: str) -> list[dict]:
         timeout=10,
     )
     return resp.json() if resp.status_code == 200 else []
+
+
+def build_findings(sherlock_results: list[str], hunter_results: dict, hibp_results: list[dict]) -> dict:
+    platforms = {}
+    for platform, domain in PLATFORM_DOMAINS.items():
+        matches = [url for url in sherlock_results if domain in url]
+        platforms[platform] = {
+            "signal_found": bool(matches),
+            "evidence": [f"Profile found via username search: {url}" for url in matches],
+            # QC's 2-of-3 rule needs 2+ independent sources before a claim
+            # is shown to the client - one Sherlock match alone is a lead,
+            # not a verified claim.
+            "sources_verified": 1 if matches else 0,
+        }
+
+    domain_emails = hunter_results.get("data", {}).get("emails", []) if isinstance(hunter_results, dict) else []
+
+    return {
+        "platforms": platforms,
+        "domain_contacts_found": len(domain_emails),
+        "breach_count": len(hibp_results) if isinstance(hibp_results, list) else 0,
+        "hunter_configured": bool(HUNTER_API_KEY),
+        "hibp_configured": bool(HIBP_API_KEY),
+    }

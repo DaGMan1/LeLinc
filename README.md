@@ -52,6 +52,23 @@ given client ever wants to supply their own Pro key for the newer
 Chromium/more patches, that's their call and their cost, not something
 baked into LeLinc's pricing.
 
+**Frontend redesign (2026-07-11):** onboarding and dashboard rebuilt with
+a real design system (`nginx/styles.css` - shared tokens across all four
+pages, both light/dark themes, teal accent distinct from generic AI-blue).
+Dashboard no longer dumps raw JSON - `agents/orchestrator.py` now emits a
+structured `findings` block (`build_findings()`) that the frontend renders
+as honest, readable claims: only Sherlock is unconditionally wired, so
+platform "signals" show 1/3 sources and are explicitly labeled as leads,
+not verified claims, until Hunter/HIBP keys and more OSINT sources exist
+to actually clear the 2-of-3 bar. Verified end to end via CDP device
+emulation at a true 390px mobile viewport (light + dark) - not guessed;
+an earlier round of screenshots via `chrome --window-size=390,844
+--screenshot=` looked broken but turned out to be a Chrome headless "new"
+mode quirk (enforces a ~500px minimum window, silently cropping the
+image) rather than a real CSS bug - worth knowing if screenshotting this
+app again, use CDP `Emulation.setDeviceMetricsOverride` instead of
+`--window-size` for anything below ~500px.
+
 Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
 `sales_manager.py`, `sales_agent.py`.
 

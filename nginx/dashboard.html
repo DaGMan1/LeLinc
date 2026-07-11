@@ -4,68 +4,133 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>LeLinc — Dashboard</title>
+<link rel="stylesheet" href="/styles.css" />
 <script src="/login-proxy/proxy.js"></script>
 <style>
-  :root { color-scheme: dark; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: #0b0d12;
-    color: #e8eaed;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 20px;
-  }
-  .wrap { max-width: 480px; margin: 0 auto; }
-  h1 { font-size: 1.3rem; margin: 8px 0 2px; }
-  p.sub { color: #9aa0ab; margin: 0 0 24px; font-size: 0.9rem; }
-  .section-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 24px 0 10px; }
-  .platform-row {
+  body { padding: 20px 20px 48px; }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+
+  .identity { margin-bottom: 30px; }
+  .identity h1 { font-size: 1.4rem; margin: 6px 0 3px; letter-spacing: -0.01em; }
+  .identity .domain { color: var(--text-muted); font-size: 0.88rem; }
+
+  .section-title {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #14171f;
-    border: 1px solid #232732;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
   }
-  .platform-name { font-weight: 600; text-transform: capitalize; }
-  .badge {
-    font-size: 0.75rem;
-    padding: 4px 10px;
-    border-radius: 999px;
+  section + section { margin-top: 30px; }
+
+  .platform-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+  @media (max-width: 420px) { .platform-grid { grid-template-columns: minmax(0, 1fr); } }
+
+  .platform-card {
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: var(--shadow);
   }
-  .badge.connected { background: #16321f; color: #5fd88a; }
-  .badge.expired { background: #3a2313; color: #f0a95c; }
-  .badge.pending { background: #1c2333; color: #7ea6f7; }
-  .install-hint { font-size: 0.75rem; color: #f0a95c; margin: -4px 0 14px; }
-  .install-hint a { color: #7ea6f7; }
-  button.connect {
-    background: #5b8dee;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 0.85rem;
-    cursor: pointer;
+  .platform-head { display: flex; align-items: center; gap: 10px; }
+  .platform-avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--accent-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; flex: none;
   }
-  .report { background: #14171f; border: 1px solid #232732; border-radius: 12px; padding: 16px; font-size: 0.88rem; color: #c4c8d0; white-space: pre-wrap; }
-  .brand { font-size: 0.75rem; color: #545a66; text-align: center; margin-top: 32px; }
+  .platform-name { font-weight: 600; font-size: 0.94rem; text-transform: capitalize; }
+
+  button.connect { width: 100%; padding-left: 8px; padding-right: 8px; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .findings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .finding-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+  }
+  .finding-row:first-child { border-top: none; padding-top: 0; }
+  .finding-name { font-weight: 600; font-size: 0.9rem; text-transform: capitalize; }
+  .finding-evidence { color: var(--text-muted); font-size: 0.82rem; margin-top: 3px; max-width: 34ch; }
+
+  .stat-row { display: flex; gap: 10px; margin-top: 14px; }
+  .stat-tile {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .stat-tile .label { overflow-wrap: break-word; }
+  .stat-tile .num { font-size: 1.3rem; font-weight: 700; font-family: ui-monospace, monospace; }
+  .stat-tile .label { font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; }
+
+  .note { color: var(--text-muted); font-size: 0.8rem; margin-top: 12px; line-height: 1.5; }
+
+  .loading-line {
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+  .footer-brand { text-align: center; margin-top: 40px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1 id="business-name">Your LeLinc Dashboard</h1>
-  <p class="sub">Connect platforms one at a time and review your profile report.</p>
 
-  <div class="section-title">Platforms</div>
-  <div id="platforms"></div>
+  <div class="topbar">
+    <a class="brand-mark" href="/"><span class="dot"></span>LeLinc</a>
+    <span class="eyebrow">Key View Digital</span>
+  </div>
 
-  <div class="section-title">Profile Report</div>
-  <div class="report" id="report">Loading…</div>
+  <div class="identity">
+    <span class="eyebrow" id="profile-status">Profile</span>
+    <h1 id="business-name">Your dashboard</h1>
+    <div class="domain" id="business-domain"></div>
+  </div>
 
-  <div class="brand">LeLinc · Key View Digital</div>
+  <section>
+    <div class="section-title">Platforms</div>
+    <div class="platform-grid" id="platforms">
+      <div class="loading-line" style="height:64px;"></div>
+      <div class="loading-line" style="height:64px;"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">What we found</div>
+    <div class="findings-card" id="findings">
+      <div class="loading-line" style="height:16px; width:60%; margin-bottom:10px;"></div>
+      <div class="loading-line" style="height:16px; width:40%;"></div>
+    </div>
+  </section>
+
+  <div class="footer-brand">
+    <span class="eyebrow">LeLinc — the aggregator, not the accounts</span>
+  </div>
 </div>
 
 <script>
@@ -86,6 +151,13 @@ function ensurePolling() {
   }, 3000);
 }
 
+function statusPill(kind, label) {
+  const span = document.createElement("span");
+  span.className = `pill ${kind}`;
+  span.innerHTML = `<span class="dot"></span>${label}`;
+  return span;
+}
+
 async function loadPlatforms() {
   const container = document.getElementById("platforms");
   let connected = [];
@@ -100,32 +172,30 @@ async function loadPlatforms() {
       pendingPlatforms.delete(platform);
     }
 
-    const row = document.createElement("div");
-    row.className = "platform-row";
+    const card = document.createElement("div");
+    card.className = "platform-card";
 
+    const head = document.createElement("div");
+    head.className = "platform-head";
+    const avatar = document.createElement("div");
+    avatar.className = "platform-avatar";
+    avatar.textContent = platform.slice(0, 2).toUpperCase();
+    head.appendChild(avatar);
     const name = document.createElement("span");
     name.className = "platform-name";
     name.textContent = platform;
-    row.appendChild(name);
+    head.appendChild(name);
+    card.appendChild(head);
 
     if (status && status.connected && !status.expired) {
-      const badge = document.createElement("span");
-      badge.className = "badge connected";
-      badge.textContent = "Connected";
-      row.appendChild(badge);
+      card.appendChild(statusPill("success", "Connected"));
     } else if (status && status.expired) {
-      const badge = document.createElement("span");
-      badge.className = "badge expired";
-      badge.textContent = "Expired";
-      row.appendChild(badge);
+      card.appendChild(statusPill("warn", "Expired — reconnect"));
     } else if (pendingPlatforms.has(platform)) {
-      const badge = document.createElement("span");
-      badge.className = "badge pending";
-      badge.textContent = "Waiting for login…";
-      row.appendChild(badge);
+      card.appendChild(statusPill("accent", "Waiting for login…"));
     } else {
       const btn = document.createElement("button");
-      btn.className = "connect";
+      btn.className = "btn-primary connect";
       btn.textContent = `Connect ${platform}`;
       btn.onclick = () => {
         openPlatformLogin(platform, clientId, (result) => {
@@ -138,26 +208,112 @@ async function loadPlatforms() {
           }
         });
       };
-      row.appendChild(btn);
+      card.appendChild(btn);
     }
-    container.appendChild(row);
+    container.appendChild(card);
   });
 }
 
+function renderFindings(job) {
+  const el = document.getElementById("findings");
+  const report = job.report;
+
+  if (job.status === "running" || !report) {
+    el.innerHTML = "";
+    const shimmer1 = document.createElement("div");
+    shimmer1.className = "loading-line";
+    shimmer1.style.cssText = "height:16px; width:60%; margin-bottom:10px;";
+    const shimmer2 = document.createElement("div");
+    shimmer2.className = "loading-line";
+    shimmer2.style.cssText = "height:16px; width:40%;";
+    el.appendChild(shimmer1);
+    el.appendChild(shimmer2);
+    return;
+  }
+
+  if (job.status === "failed") {
+    el.textContent = "Profiling failed - contact support to retry.";
+    return;
+  }
+
+  const findings = report.findings;
+  el.innerHTML = "";
+
+  if (!findings) {
+    el.textContent = "No findings available.";
+    return;
+  }
+
+  const anySignal = Object.values(findings.platforms).some((p) => p.signal_found);
+  if (!anySignal) {
+    const row = document.createElement("div");
+    row.className = "finding-row";
+    row.innerHTML = `<div><div class="finding-name">No public profile signals found yet</div>
+      <div class="finding-evidence">We'll pick this up again as more sources come online.</div></div>`;
+    el.appendChild(row);
+  } else {
+    Object.entries(findings.platforms).forEach(([platform, data]) => {
+      if (!data.signal_found) return;
+      const row = document.createElement("div");
+      row.className = "finding-row";
+
+      const left = document.createElement("div");
+      const nameEl = document.createElement("div");
+      nameEl.className = "finding-name";
+      nameEl.textContent = platform;
+      left.appendChild(nameEl);
+      const ev = document.createElement("div");
+      ev.className = "finding-evidence";
+      ev.textContent = data.evidence[0] || "Signal found.";
+      left.appendChild(ev);
+      row.appendChild(left);
+
+      row.appendChild(statusPill("neutral", `${data.sources_verified}/3 sources`));
+      el.appendChild(row);
+    });
+  }
+
+  const stats = document.createElement("div");
+  stats.className = "stat-row";
+
+  const contactsTile = document.createElement("div");
+  contactsTile.className = "stat-tile";
+  contactsTile.innerHTML = findings.hunter_configured
+    ? `<div class="num mono">${findings.domain_contacts_found}</div><div class="label">domain contacts found</div>`
+    : `<div class="num mono">—</div><div class="label">domain lookup not configured</div>`;
+  stats.appendChild(contactsTile);
+
+  const breachTile = document.createElement("div");
+  breachTile.className = "stat-tile";
+  breachTile.innerHTML = findings.hibp_configured
+    ? `<div class="num mono">${findings.breach_count}</div><div class="label">known breaches (email)</div>`
+    : `<div class="num mono">—</div><div class="label">breach check not configured</div>`;
+  stats.appendChild(breachTile);
+
+  el.appendChild(stats);
+
+  const note = document.createElement("div");
+  note.className = "note";
+  note.textContent = "Sources shown here are single-signal leads, not fully cross-referenced claims - LeLinc only shows a platform as verified once 2 of 3 independent sources agree.";
+  el.appendChild(note);
+}
+
 async function loadReport() {
-  const reportEl = document.getElementById("report");
   if (!clientId) {
-    reportEl.textContent = "No client_id in URL.";
+    document.getElementById("business-name").textContent = "No client_id in URL";
     return;
   }
   const res = await fetch(`/onboard/status/${clientId}`);
   if (!res.ok) {
-    reportEl.textContent = "No report available yet.";
+    document.getElementById("business-name").textContent = "No profile found for this link";
     return;
   }
   const job = await res.json();
-  document.getElementById("business-name").textContent = job.business_name || "Your LeLinc Dashboard";
-  reportEl.textContent = job.report ? JSON.stringify(job.report, null, 2) : `Status: ${job.status}`;
+  document.getElementById("business-name").textContent = job.business_name || "Your dashboard";
+  document.getElementById("business-domain").textContent = job.domain || "";
+  document.getElementById("profile-status").textContent =
+    job.status === "complete" ? "Profile ready" : job.status === "failed" ? "Profile failed" : "Profiling…";
+  renderFindings(job);
 }
 
 loadPlatforms();
