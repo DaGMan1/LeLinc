@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LeLinc — Dashboard</title>
+<script src="/login-proxy/proxy.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #0b0d12;
+    color: #e8eaed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; margin: 8px 0 2px; }
+  p.sub { color: #9aa0ab; margin: 0 0 24px; font-size: 0.9rem; }
+  .section-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin: 24px 0 10px; }
+  .platform-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #14171f;
+    border: 1px solid #232732;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .platform-name { font-weight: 600; text-transform: capitalize; }
+  .badge {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .badge.connected { background: #16321f; color: #5fd88a; }
+  .badge.expired { background: #3a2313; color: #f0a95c; }
+  button.connect {
+    background: #5b8dee;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .report { background: #14171f; border: 1px solid #232732; border-radius: 12px; padding: 16px; font-size: 0.88rem; color: #c4c8d0; white-space: pre-wrap; }
+  .brand { font-size: 0.75rem; color: #545a66; text-align: center; margin-top: 32px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="business-name">Your LeLinc Dashboard</h1>
+  <p class="sub">Connect platforms one at a time and review your profile report.</p>
+
+  <div class="section-title">Platforms</div>
+  <div id="platforms"></div>
+
+  <div class="section-title">Profile Report</div>
+  <div class="report" id="report">Loading…</div>
+
+  <div class="brand">LeLinc · Key View Digital</div>
+</div>
+
+<script>
+const PLATFORMS = ["instagram", "linkedin", "facebook", "tiktok"];
+const params = new URLSearchParams(window.location.search);
+const clientId = params.get("client_id");
+
+async function loadPlatforms() {
+  const container = document.getElementById("platforms");
+  let connected = [];
+  if (clientId) {
+    const res = await fetch(`/cookies/status/${clientId}`);
+    connected = res.ok ? await res.json() : [];
+  }
+  container.innerHTML = "";
+  PLATFORMS.forEach((platform) => {
+    const status = connected.find((c) => c.platform === platform);
+    const row = document.createElement("div");
+    row.className = "platform-row";
+
+    const name = document.createElement("span");
+    name.className = "platform-name";
+    name.textContent = platform;
+    row.appendChild(name);
+
+    if (status && status.connected && !status.expired) {
+      const badge = document.createElement("span");
+      badge.className = "badge connected";
+      badge.textContent = "Connected";
+      row.appendChild(badge);
+    } else if (status && status.expired) {
+      const badge = document.createElement("span");
+      badge.className = "badge expired";
+      badge.textContent = "Expired";
+      row.appendChild(badge);
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "connect";
+      btn.textContent = `Connect ${platform}`;
+      btn.onclick = () => openPlatformLogin(platform);
+      row.appendChild(btn);
+    }
+    container.appendChild(row);
+  });
+}
+
+async function loadReport() {
+  const reportEl = document.getElementById("report");
+  if (!clientId) {
+    reportEl.textContent = "No client_id in URL.";
+    return;
+  }
+  const res = await fetch(`/onboard/status/${clientId}`);
+  if (!res.ok) {
+    reportEl.textContent = "No report available yet.";
+    return;
+  }
+  const job = await res.json();
+  document.getElementById("business-name").textContent = job.business_name || "Your LeLinc Dashboard";
+  reportEl.textContent = job.report ? JSON.stringify(job.report, null, 2) : `Status: ${job.status}`;
+}
+
+loadPlatforms();
+loadReport();
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LeLinc — Get Started</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0b0d12;
+    color: #e8eaed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: #14171f;
+    border: 1px solid #232732;
+    border-radius: 16px;
+    padding: 32px 24px;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.sub { color: #9aa0ab; margin: 0 0 24px; font-size: 0.9rem; }
+  label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: #b8bcc4; }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    background: #0b0d12;
+    border: 1px solid #2a2f3a;
+    border-radius: 10px;
+    color: #e8eaed;
+    font-size: 1rem;
+  }
+  input:focus { outline: none; border-color: #5b8dee; }
+  button {
+    width: 100%;
+    padding: 14px;
+    background: #5b8dee;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .status { margin-top: 16px; font-size: 0.9rem; color: #9aa0ab; text-align: center; }
+  .brand { font-size: 0.75rem; color: #545a66; text-align: center; margin-top: 20px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Let's profile your business</h1>
+    <p class="sub">Three fields, one click. We'll scan your public presence and build your report.</p>
+
+    <form id="onboard-form">
+      <label for="business_name">Business Name</label>
+      <input id="business_name" name="business_name" type="text" required autocomplete="organization" />
+
+      <label for="domain">Domain / Website</label>
+      <input id="domain" name="domain" type="text" required autocomplete="url" placeholder="example.com.au" />
+
+      <label for="email">Email Address</label>
+      <input id="email" name="email" type="email" required autocomplete="email" />
+
+      <button type="submit" id="submit-btn">Start Profiling</button>
+    </form>
+
+    <div class="status" id="status"></div>
+    <div class="brand">LeLinc · Key View Digital</div>
+  </div>
+
+<script>
+const form = document.getElementById("onboard-form");
+const statusEl = document.getElementById("status");
+const submitBtn = document.getElementById("submit-btn");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Starting…";
+  statusEl.textContent = "";
+
+  const payload = {
+    business_name: document.getElementById("business_name").value,
+    domain: document.getElementById("domain").value,
+    email: document.getElementById("email").value,
+  };
+
+  try {
+    const res = await fetch("/onboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Failed to start profiling");
+    const { client_id } = await res.json();
+    pollStatus(client_id);
+  } catch (err) {
+    statusEl.textContent = "Something went wrong. Please try again.";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Start Profiling";
+  }
+});
+
+async function pollStatus(clientId) {
+  statusEl.textContent = "Profiling in progress… this can take a minute.";
+  const poll = setInterval(async () => {
+    const res = await fetch(`/onboard/status/${clientId}`);
+    const job = await res.json();
+    if (job.status === "complete") {
+      clearInterval(poll);
+      window.location.href = `/dashboard?client_id=${clientId}`;
+    } else if (job.status === "failed") {
+      clearInterval(poll);
+      statusEl.textContent = "Profiling failed. Please try again or contact support.";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Start Profiling";
+    }
+  }, 3000);
+}
+</script>
+</body>
+</html>

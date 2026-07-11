@@ -1,0 +1,21 @@
+services:
+  lelinc:
+    build: .
+    image: lelinc:latest
+    container_name: lelinc-${CLIENT_ID:-default}
+    ports:
+      - "80:80"
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      - CLIENT_ID=${CLIENT_ID:-default}
+      - HUNTER_API_KEY=${HUNTER_API_KEY:-}
+      - HIBP_API_KEY=${HIBP_API_KEY:-}
+    volumes:
+      - lelinc-cookies:/cookies
+      - lelinc-profile:/profile
+    restart: unless-stopped
+
+volumes:
+  lelinc-cookies:
+  lelinc-profile:
