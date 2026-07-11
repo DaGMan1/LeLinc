@@ -146,6 +146,69 @@ LeLinc is the engine. Key View Infrastructure is the internal business layer tha
 
 ---
 
+## 1a. Cookie Grant Flow — Detailed
+
+This is the mechanism Claude Code needs to build. It explains how cookies move from the client's real browser into Cloak without ever storing a password.
+
+### The Problem
+Cloak Browser needs to be logged into social platforms to work. But Cloak can't log in itself — login pages use 2FA, CAPTCHAs, and suspicious-login detection. The only way to get an authenticated session is to have a real human log in once, then hand the session to Cloak.
+
+### The Solution: Cookie Grant
+
+**Step 1 — Client clicks "Connect Instagram" on the LeLinc dashboard**
+- NGINX serves a page at `/connect/instagram` that proxies to the real Instagram login page
+- The client sees the genuine Instagram login page, served through a proxy on our domain
+- The client never leaves lelinc.keyview.com.au — the login page looks and works exactly like Instagram's
+
+**Step 2 — Client logs in normally**
+- Client enters their Instagram username and password on the real Instagram login page
+- The credentials go directly to Instagram's servers — NGINX just proxies the traffic
+- **We never intercept, read, or store the password.** This is critical.
+- Instagram processes the login and returns the authenticated session
+
+**Step 3 — Cookie Grant detects the successful login**
+- Cookie Grant monitors the browser session via CDP or DOM event
+- It watches for the post-login redirect (feed URL, profile URL — the client is now logged in)
+- On detecting success, it calls CDP `Network.getCookies()` to extract all session cookies
+- These cookies contain the `sessionid`, `csrftoken`, and any other auth tokens Instagram set
+
+**Step 4 — Cookies are stored**
+- Cookie Grant writes the cookies as JSON: `/data/cookies/{client_id}/instagram.json`
+- Format per cookie: `{name, value, domain, path, secure, httpOnly, expiry}`
+- Cookies are stored per platform per client — fully isolated
+- Never stored with any password or personal data
+
+**Step 5 — Login tab closes**
+- Cookie Grant sends a signal to the dashboard: login complete
+- The login tab closes
+- The client sees the platform listed as "Connected" on their dashboard
+
+**Step 6 — Cloak loads the cookies**
+- On next container startup (or immediately), Cloak's `entrypoint.sh` reads the cookie files
+- For each cookie, it calls CDP `Network.setCookie(cookie)` to inject it into Cloak's session
+- After all cookies are set, Cloak refreshes the page
+- Cloak now has an authenticated session — it's wearing the client's login
+- Cloak never sees a login page, never triggers 2FA, never triggers suspicious-login alerts
+
+### Cookie Expiry and Reconnection
+
+- Instagram sessions last ~2-8 weeks, TikTok ~1-3 months, LinkedIn ~30 days
+- When Cloak performs an action and gets a login redirect or 401, Cookie Grant detects the expired session
+- Dashboard shows: "🔴 Instagram session expired — reconnect"
+- Client clicks "Reconnect" → same Cookie Grant flow from Step 1
+- Old cookies are deleted, new cookies captured, Cloak restarts with fresh session
+- Cookie Grant logs expiry dates and can proactively warn before expiry
+
+### Design Principles
+- **No passwords ever stored** — session cookies only, never credentials
+- **One platform at a time** — login flow is serial per platform, never bulk
+- **Isolated per container** — Client A's container has only Client A's cookies
+- **Stateless service** — Cookie Grant is a stateless FastAPI service (~50 lines)
+- **Minimal surface** — Cookie Grant only has 2 endpoints: POST /cookies and GET /cookies/{client_id}
+- **No user database** — no registration, no user management, just cookie storage
+
+---
+
 ## 2. SOFTWARE STACK
 
 | Layer | Software | Purpose |
