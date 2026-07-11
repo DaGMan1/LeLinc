@@ -116,11 +116,15 @@ matters most is everything after login: the ongoing automated activity
 "post-login automation that shouldn't look automated" problem it's built
 to solve.
 
-Pro tier (latest Chromium, more patches) needs a paid license -
-`CLOAKBROWSER_LICENSE_KEY` is wired through `docker-compose.yml`/`.env.example`
-but unset for now (Garry doesn't have a license yet, free tier in use).
-Pricing scales with concurrent sessions - real per-client cost to factor
-into pricing, not yet decided/factored in anywhere.
+**Business model, clarified 2026-07-11:** free tier is the permanent
+default, not a placeholder until Garry buys a license. Each client's
+container runs its own free-tier Cloak Browser (unlimited sessions on the
+free tier, per the vendor). Garry isn't buying, reselling, or centrally
+budgeting for Cloak Browser access - what's being sold is the aggregator
+(dashboard, QC, orchestration) on top of it. `CLOAKBROWSER_LICENSE_KEY` in
+`docker-compose.yml`/`.env.example` stays as a per-deployment optional
+knob - if an individual client wants to supply their own Pro key, that's
+their cost, not LeLinc's.
 
 ## Handoff Log
 

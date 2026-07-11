@@ -40,13 +40,17 @@ during dev.
 `cloak/entrypoint.sh` runs the real Cloak Browser binary (not a stock
 Chromium placeholder) - `python -m cloakbrowser install` fetches it at
 build time (free tier, no license key needed: Chromium v146, 58
-source-level patches). Verified: image builds, binary boots, CDP cookie
-injection (`Network.setCookies`) works against it. Set
-`CLOAKBROWSER_LICENSE_KEY` (in `.env`) to unlock the Pro tier (latest
-Chromium, more patches) once there's a subscription - see
-[cloakbrowser.dev](https://cloakbrowser.dev/) for pricing, which scales
-with concurrent sessions and is a real per-client cost to factor into
-pricing.
+source-level patches, unlimited sessions). Verified: image builds, binary
+boots, CDP cookie injection (`Network.setCookies`) works against it.
+
+**Business model note:** the free tier is what ships by default and is
+what every client container runs - Garry isn't buying or reselling Cloak
+Browser access; the product being sold is the aggregator (dashboard, QC,
+orchestration) on top of it. `CLOAKBROWSER_LICENSE_KEY` is wired through
+per-deployment (`.env`, per client) purely as an optional knob - if a
+given client ever wants to supply their own Pro key for the newer
+Chromium/more patches, that's their call and their cost, not something
+baked into LeLinc's pricing.
 
 Not yet built (KVD business layer, stubbed only): `pr_manager.py`,
 `sales_manager.py`, `sales_agent.py`.
