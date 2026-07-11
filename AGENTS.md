@@ -100,31 +100,37 @@ image builds, extension zip serves correctly, manifest/background.js are
 syntactically valid - not yet tested against a live platform login, which
 needs a real Chrome browser this sandbox doesn't have).
 
-## Superseded: sideloaded extension is no longer the default Connect flow (2026-07-11)
+## Superseded, then reverted: manual cookie-file import is NOT the default (2026-07-11, corrected same day)
 
-Garry correctly called out that sideloading (zip → developer mode → load
-unpacked) is real friction for a non-technical customer base - not an
-acceptable default, whatever its technical merits. `extension/` and
-`/extension-install.html` are **not deleted** - they're the future
-"fully automatic, no file" path once published to the Chrome Web Store -
-but the dashboard's Connect button no longer routes there.
+Briefly made `nginx/import-cookies.html` (open real login page → log in →
+export via "Get cookies.txt LOCALLY" → drop the file on LeLinc) the
+default Connect flow, reasoning that avoiding our own unpublished
+extension was worth a manual step. Garry rejected this immediately and
+correctly: a manual export-and-upload step defeats the point of the
+product - "why the fuck do they need the link" if they're doing the work
+themselves. He wants exactly what the custom extension already does:
+click Connect → real login tab opens → login detected automatically →
+cookies captured automatically → tab closes automatically → next
+platform, or dashboard if done. Zero manual steps beyond logging in.
 
-**Default Connect flow is now `nginx/import-cookies.html`:** open the
-real login page → log in normally → export cookies via the already-
-published, independent ["Get cookies.txt LOCALLY"](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
-extension (zero review wait, since we don't own or publish it) → drop the
-file on LeLinc. New `POST /cookies/import` in `agents/cookie_grant.py`
-parses the Netscape cookie file format, including the `#HttpOnly_` prefix
-convention most exporters use to mark httpOnly cookies (which is exactly
-the class of cookie a session token is). Verified end to end with a
-realistic sample file (httpOnly sessionid preserved correctly,
-cross-platform cookies correctly excluded by domain filter, CDP injection
-into Cloak works against the imported cookies).
+**Reverted: the dashboard's Connect button once again messages our own
+extension first** (`nginx/login-proxy/proxy.js` → `extension/background.js`),
+falling back to `/extension-install.html` (sideload instructions) only
+when the extension isn't detected. `import-cookies.html` and
+`POST /cookies/import` are **not deleted** - they're unlinked from every
+page now, kept only as a potential troubleshooting fallback (e.g. if a
+client's browser policy blocks extensions) - not something to surface as
+a primary option again without Garry asking for it back.
 
-Same underlying constraint as before, still respected: login happens in
-the client's own real, unrelayed browser tab. The only thing that changed
-is which tool reads the resulting cookie - a widely-trusted, already-
-approved extension instead of our own unpublished one.
+**The actual open problem is install friction on our own extension, not
+the capture mechanism** - the capture mechanism (automatic, zero manual
+steps) is correct and already built. Sideloading (zip → developer mode →
+load unpacked) is still what a tester has to do today; the real fix is
+Chrome Web Store publishing so install becomes one click, which needs
+Garry's Google developer account and has real review-time risk (see
+Handoff Log). Until then, testing the automatic flow requires sideloading
+the extension once - that's expected of Garry/testers right now, it is
+not what a real customer will see once published.
 
 ## Resolved: real Cloak Browser, not a placeholder (2026-07-11)
 
@@ -167,6 +173,14 @@ their cost, not LeLinc's.
 ## Handoff Log
 
 Newest entry first.
+
+### 2026-07-11 — Claude Code (sandbox session), update 7
+Reverted update 6 (manual cookie-file import as default) same day - see
+"Superseded, then reverted" above. Dashboard Connect button is back to
+messaging our own extension automatically. Next concrete step is
+preparing the Chrome Web Store submission package (listing copy, privacy
+policy, permission justifications, icons) so install friction is solved
+properly instead of worked around - not started yet as of this entry.
 
 ### 2026-07-11 — Claude Code (sandbox session), update 6
 Replaced the sideloaded-extension Connect flow with `import-cookies.html`

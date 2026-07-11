@@ -69,18 +69,23 @@ image) rather than a real CSS bug - worth knowing if screenshotting this
 app again, use CDP `Emulation.setDeviceMetricsOverride` instead of
 `--window-size` for anything below ~500px.
 
-**Connect flow rebuilt (2026-07-11):** the custom extension required
-sideloading (zip, developer mode, load unpacked) - real friction for a
-non-technical customer base, correctly called out as a blocker. Default
-Connect flow is now `nginx/import-cookies.html`: open the real login page,
-log in normally, export via the already-published, independent
-["Get cookies.txt LOCALLY"](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
-extension, drop the file on LeLinc. `POST /cookies/import`
-(`agents/cookie_grant.py`) parses the Netscape cookie format (including
-the `#HttpOnly_` prefix convention, since the actual session cookie is
-httpOnly). Our own purpose-built extension (`extension/`) stays in the
-repo as the future "fully automatic, no file" upgrade once it clears
-Chrome Web Store review - not deleted, just not the default path anymore.
+**Connect flow (2026-07-11, corrected same day):** briefly swapped the
+custom extension for a manual cookie-file-import flow to dodge sideload
+friction - Garry rejected that immediately (correctly): a manual export/
+upload step defeats the point of the product. Reverted. **Default Connect
+flow is the automatic extension again**: click Connect → real login tab
+opens → login detected automatically → cookies captured automatically →
+tab closes automatically → next platform or dashboard. Zero manual steps
+beyond logging in - see `extension/README.md`. The manual-import page
+(`nginx/import-cookies.html`, `POST /cookies/import`) still exists but is
+unlinked from the UI - a dormant fallback, not a default.
+
+The actual unsolved problem is install friction on *our own* extension
+(still sideload-only: zip, developer mode, load unpacked), not the
+capture mechanism, which is correct as built. Real fix is Chrome Web
+Store publishing so install becomes one click - needs Garry's Google
+developer account and has real review-time risk to plan around, not yet
+started.
 
 Two real bugs found and fixed while verifying this end to end (not
 guessed - actually run through onboarding -> dashboard -> connect ->
